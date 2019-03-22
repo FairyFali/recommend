@@ -1,6 +1,13 @@
 ## 推荐系统实例
 #### 前言
 本项目代码参考于https://github.com/lpty/recommendation.git ，自动动手实现。
+
+#### 环境依赖
++ Python3
+    + Pandas,numpy,pickle
++ Sites (演示Demo)
+    + Apache + PHP
+
 #### 目录
 * 基于协同过滤(UserCF)的模型
 * 基于隐语义(LFM)的模型

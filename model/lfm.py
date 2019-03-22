@@ -19,11 +19,15 @@ class Corpus:
         '''
         print('Process 语料生成')
         file_path = 'data/ratings.csv'
+        # 文件数据
         cls.frame = pd.read_csv(file_path)
+        # 所有的用户id
         cls.user_ids = set(cls.frame['UserID'])
+        # 所有的商品id
         cls.item_ids = set(cls.frame['MovieID'])
-        cls.items_dict = {user_id: cls._get_pos_neg_item(user_id)
-                          for user_id in list(cls.user_ids)}
+        # 所有的商品字典，存储形式为{user_id:{item_id1:0,item_id2:1}}
+        cls.items_dict = {user_id: cls._get_pos_neg_item(user_id) for user_id in list(cls.user_ids)}
+        # 保存商品字典
         cls.save()
         print('Process 语料生成完毕->', cls.items_dict_path)
 
@@ -71,6 +75,7 @@ class Corpus:
 
 class LFM:
 
+    # 模型矩阵位置
     model_path = 'data/lfm.model'
 
     def __init__(self):
@@ -146,17 +151,23 @@ class LFM:
         :param top_n:
         :return:
         '''
+        # 加载参数矩阵
         self.load()
         # print(self.p)
         # print(self.q)
+        # 获得用户看过的电影
         pos_items_ids = set(self.frame[self.frame['UserID']
                                       == user_id]['MovieID'])
+        # 获得用户没有看过的电影
         neg_items_ids = self.item_ids ^ pos_items_ids
+        # 兴趣得分列表
         interest_list = []
         for i in neg_items_ids:
             interest_list.append(self._predict(user_id, i))
+        # 排序
         candidates = sorted(zip(list(neg_items_ids), interest_list),
                             key=lambda x: x[1], reverse=True)
+        # 返回前top_n个
         return candidates[:top_n]
 
     def _loss(self, user_id, item_id, y, step):
@@ -190,15 +201,16 @@ class LFM:
         :param e:
         :return:
         '''
+        # 梯度
         gradient_p = -e * self.q.loc[item_id].values
         gradient_q = -e * self.p.loc[user_id].values
-
-        l2_p = self.lam*self.q.loc[item_id].values
-        l2_q = self.lam*self.p.loc[user_id].values
-
+        # 正则项
+        l2_p = self.lam*self.q.loc[user_id].values
+        l2_q = self.lam*self.p.loc[item_id].values
+        # 乘以学习率
         delta_p = self.lr*(gradient_p + l2_p)
         delta_q = self.lr*(gradient_q + l2_q)
-
+        # 调整
         self.p -= delta_p
         self.q -= delta_q
 
@@ -207,16 +219,23 @@ class LFM:
         训练模型，定期完成
         :return:
         '''
+        # 迭代iter_count次
         for step in range(0, self.iter_count):
+            # 遍历，字典中的每一key，value，
             for user_id, item_dict in self.items_dict.items():
                 item_ids = list(item_dict.keys())
+                # 随机打乱
                 random.shuffle(item_ids)
+                # 遍历每一个user_id对应的item_id
                 for item_id in item_ids:
+                    # 计算偏差
                     e = self._loss(user_id, item_id,
                                    item_dict[item_id], step)
+                    # 优化
                     self._optimize(user_id, item_id, e)
             # 逐渐降低学习率，避免震荡
             self.lr *= 0.9
+        # 将训练的模型保存下来
         self.save()
 
 
