@@ -18,7 +18,7 @@
 
 * 数据预处理
 
-    python manage.py preprocess
+    python read_ratings.py
 
 * 模型运行
 
